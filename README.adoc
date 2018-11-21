@@ -277,15 +277,15 @@ Test the app using the usernames provided (`alice` and `jdoe`).
 
 == Lab: Coding Spring Boot applications integrated with Keycloak (from scratch)
 
-TODO
-
 === References
 
-.https://www.youtube.com/watch?v=GY-5jwI_7nkh[Easily Secure Your Front and Back End app with Keycloak]
+.https://www.youtube.com/watch?v=GY-5jwI_7nkh[Video (Feb 5, 2018): Easily Secure Your Front and Back End app with Keycloak]
 video::GY-5jwI_7nk[youtube]
 
-.https://www.youtube.com/watch?v=3I4TXPxCCVE[Easily secure and add Identity Management to your Spring Boot applications by Sebastien Blanc]
+.https://www.youtube.com/watch?v=3I4TXPxCCVE[Video (Nov 8, 2017): Easily secure and add Identity Management to your Spring Boot applications by Sebastien Blanc]
 video::3I4TXPxCCVE[youtube]
+
+__https://developers.redhat.com/blog/2017/05/25/easily-secure-your-spring-boot-applications-with-keycloak/[Article (May 25, 2017): Easily secure your Spring Boot applications with Keycloak]__
 
 == Lab: Running Keycloak in Docker and Kubernetes
 
@@ -293,28 +293,32 @@ TODO
 
 === References
 
-.https://www.youtube.com/watch?v=A_BYZ7hHWXE[Keycloak on Kubernetes]
+.https://www.youtube.com/watch?v=A_BYZ7hHWXE[Video (Jun 27, 2018): Keycloak on Kubernetes]
 video::A_BYZ7hHWXE[youtube]
 
-.https://www.youtube.com/watch?v=nPZ8QDZXtLI[OpenID Connect and OAuth 2 explained in under 10 minutes!]
+.https://www.youtube.com/watch?v=nPZ8QDZXtLI[Video (Mar 25, 2018): OpenID Connect and OAuth 2 explained in under 10 minutes!]
 video::nPZ8QDZXtLI[youtube]
 
-.https://www.youtube.com/watch?v=NZI3C6vdjQk[Setup Keycloak as an Identity Provider & OpenID Connect Token Issuer]
-video::NZI3C6vdjQk[youtube]
-
-.https://www.youtube.com/watch?v=gJ81eaGlN_I[Use Open ID Connect for Kubernetes API server]
+.https://www.youtube.com/watch?v=gJ81eaGlN_I[Video (Mar 31, 2018): Use Open ID Connect for Kubernetes API server]
 video::gJ81eaGlN_I[youtube]
+
+.https://www.youtube.com/watch?v=NZI3C6vdjQk[Video (Mar 30, 2018): Setup Keycloak as an Identity Provider & OpenID Connect Token Issuer]
+video::NZI3C6vdjQk[youtube]
 
 == Lab: Running Keycloak in Cloud Foundry
 
 TODO
 
+=== References
+
+* https://stackoverflow.com/questions/44743371/how-to-deploy-keycloak-to-cloudfoundry
+* https://github.com/kirmerzlikin/keycloak-buildpack
+* https://github.com/thomasdarimont/spring-boot-keycloak-server-example
+
 == Other resources
 
-=== Videos
-
-.https://www.youtube.com/watch?v=mdZauKsMDiI[Securing apps and services with Keycloak authentication]
+.https://www.youtube.com/watch?v=mdZauKsMDiI[Video (Aug 16, 2018):  Securing apps and services with Keycloak authentication]
 video::mdZauKsMDiI[youtube]
 
-.https://www.youtube.com/watch?v=67mezK3NzpU[100% Stateless with JWT (JSON Web Token) by Hubert Sablonnière]
+.https://www.youtube.com/watch?v=67mezK3NzpU[Video (Nov 10, 2016): 100% Stateless with JWT (JSON Web Token) by Hubert Sablonnière]
 video::67mezK3NzpU[youtube]
