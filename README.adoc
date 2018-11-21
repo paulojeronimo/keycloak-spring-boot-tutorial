@@ -9,8 +9,9 @@
 :uri-jwt-rfc: https://tools.ietf.org/html/rfc7519
 
 // Attributes
+:jdk-version: 11.0.1-open
 :keycloak: https://www.keycloak.org/[Keycloak^]
-:keycloak-version: 4.5.0.Final
+:keycloak-version: 4.6.0.Final
 :spring-boot: https://spring.io/projects/spring-boot[Spring Boot^]
 :sdkman: https://sdkman.io/[SDKMAN^]
 :jq: https://stedolan.github.io/jq/[jq^]
@@ -24,21 +25,17 @@ The primary focus of these labs is to explain how {spring-boot} applications can
 Create dir and download keycloak.
 
 ----
-$ mkdir -p ~/labs/keycloak && cd $_
-$ curl -O https://downloads.jboss.org/keycloak/4.5.0.Final/keycloak-4.5.0.Final.tar.gz
+$ wget -c https://downloads.jboss.org/keycloak/4.6.0.Final/keycloak-4.6.0.Final.tar.gz
 ----
 
-Setup JDK to use.
-
-NOTE: keycloak 4.5.0 does not works properly with jdk11.
-So, this labs use another (old) version of jdk.
+Setup JDK to use ({jdk-version}).
 
 ----
-$ sdk use java 9.0.4-oracle
+$ sdk default java 11.0.1-open
 $ java -version
-java version "9.0.4"
-Java(TM) SE Runtime Environment (build 9.0.4+11)
-Java HotSpot(TM) 64-Bit Server VM (build 9.0.4+11, mixed mode)
+openjdk version "11.0.1" 2018-10-16
+OpenJDK Runtime Environment 18.9 (build 11.0.1+13)
+OpenJDK 64-Bit Server VM 18.9 (build 11.0.1+13, mixed mode)
 ----
 
 NOTE: `sdk` ({sdkman}) is a command line too used in this tutorial to set up the JDK version used.
@@ -46,14 +43,15 @@ NOTE: `sdk` ({sdkman}) is a command line too used in this tutorial to set up the
 Extract keycloak:
 
 ----
-$ tar xvfz keycloak-4.5.0.Final.tar.gz
+$ tar xvfz keycloak-4.6.0.Final.tar.gz
 ----
 
 Configure the KEYCLOAK_HOME and set the PATH for its binaries:
 
 ----
 $ cat > bashrc << EOF
-export KEYCLOAK_HOME=$PWD/keycloak-4.5.0.Final
+export KEYCLOAK_LAB=$PWD
+export KEYCLOAK_HOME=\$KEYCLOAK_LAB/keycloak-4.6.0.Final
 export PATH=\$KEYCLOAK_HOME/bin:\$PATH
 EOF
 $ source $PWD/bashrc
@@ -76,8 +74,12 @@ Clone https://github.com/keycloak/keycloak-quickstarts[keycloak-quickstarts].
 
 ----
 $ git clone https://github.com/keycloak/keycloak-quickstarts.git
+$ cd keycloak-quickstarts
+$ git checkout 4.6.0.Final
+$ git apply ../../patches/`basename $PWD`/pom.xml
 ----
 
+[[app-authz-rest-springboot]]
 === Lab: app-authz-rest-springboot
 
 The https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-authz-rest-springboot[app-authz-rest-springboot] quickstart
@@ -111,7 +113,7 @@ We can use two distinct users to access this application:
 Let's change to the application directory:
 
 ----
-$ cd keycloak-quickstarts/app-authz-rest-springboot
+$ cd app-authz-rest-springboot
 ----
 
 We need to import the file `config/quickstart-realm.json`.
@@ -127,21 +129,6 @@ NOTE: We can click on `View details` to see more information about the realm tha
 
 We need to click `Save`.
 
-We must add the following lines to the `properties` in `pom.xml`:
-
-----
-<maven.compiler.target>1.8</maven.compiler.target>
-<maven.compiler.source>1.8</maven.compiler.source>
-----
-
-[NOTE]
-====
-We can do this quickly by running the following command:
-----
-$ git apply ../../patches/`basename $PWD`/pom.xml.patch
-----
-====
-
 Now, let's run the Spring Boot app:
 
 ----
@@ -151,7 +138,7 @@ $ mvn spring-boot:run
 Backing to the dir `~/labs/keycloak`, let's obtain the OAuth2 access token for user `alice`:
 
 ----
-$ cd ~/labs/keycloak
+$ cd $KEYCLOAK_LAB
 $ curl -X POST \
   http://localhost:8180/auth/realms/spring-boot-quickstart/protocol/openid-connect/token \
   -H 'Authorization: Basic YXBwLWF1dGh6LXJlc3Qtc3ByaW5nYm9vdDpzZWNyZXQ=' \
@@ -272,6 +259,10 @@ If you are logged in to the master realm this dropdown menu lists all the realms
 
 ==== Build and Run
 
+First, stop the execution for the last lab (<<app-authz-rest-springboot>>) if it is already running!
+
+Then, start the microservice for this lab:
+
 ----
 $ cd keycloak-quickstarts/app-authz-springboot/
 $ mvn spring-boot:run
@@ -290,10 +281,10 @@ TODO
 
 === References
 
-.Easily Secure Your Front and Back End app with Keycloak
+.https://www.youtube.com/watch?v=GY-5jwI_7nkh[Easily Secure Your Front and Back End app with Keycloak]
 video::GY-5jwI_7nk[youtube]
 
-.Easily secure and add Identity Management to your Spring Boot applications by Sebastien Blanc
+.https://www.youtube.com/watch?v=3I4TXPxCCVE[Easily secure and add Identity Management to your Spring Boot applications by Sebastien Blanc]
 video::3I4TXPxCCVE[youtube]
 
 == Lab: Running Keycloak in Docker and Kubernetes
@@ -302,34 +293,28 @@ TODO
 
 === References
 
-.Keycloak on Kubernetes
+.https://www.youtube.com/watch?v=A_BYZ7hHWXE[Keycloak on Kubernetes]
 video::A_BYZ7hHWXE[youtube]
 
-.OpenID Connect and OAuth 2 explained in under 10 minutes!
+.https://www.youtube.com/watch?v=nPZ8QDZXtLI[OpenID Connect and OAuth 2 explained in under 10 minutes!]
 video::nPZ8QDZXtLI[youtube]
 
-.Setup Keycloak as an Identity Provider & OpenID Connect Token Issuer
+.https://www.youtube.com/watch?v=NZI3C6vdjQk[Setup Keycloak as an Identity Provider & OpenID Connect Token Issuer]
 video::NZI3C6vdjQk[youtube]
 
-.Use Open ID Connect for Kubernetes API server
+.https://www.youtube.com/watch?v=gJ81eaGlN_I[Use Open ID Connect for Kubernetes API server]
 video::gJ81eaGlN_I[youtube]
 
 == Lab: Running Keycloak in Cloud Foundry
 
 TODO
 
-== Other references
+== Other resources
 
 === Videos
 
-.Securing apps and services with Keycloak authentication
+.https://www.youtube.com/watch?v=mdZauKsMDiI[Securing apps and services with Keycloak authentication]
 video::mdZauKsMDiI[youtube]
 
-.100% Stateless with JWT (JSON Web Token) by Hubert Sablonnière
+.https://www.youtube.com/watch?v=67mezK3NzpU[100% Stateless with JWT (JSON Web Token) by Hubert Sablonnière]
 video::67mezK3NzpU[youtube]
-
-=== Other
-
-* Running Keycloak with jdk11:
-** https://issues.jboss.org/browse/WFLY-10937
-** https://issues.jboss.org/browse/KEYCLOAK-7745
