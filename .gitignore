@@ -2,3 +2,6 @@
 /keycloak-*
 /*.access_token
 /bashrc
+/spring-boot-keycloak-tutorial
+/uaa
+/oauth-*-sample

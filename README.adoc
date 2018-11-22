@@ -4,6 +4,7 @@
 :numbered:
 :icons: font
 :imagesdir: images
+:experimental:
 
 // URIs
 :uri-jwt-rfc: https://tools.ietf.org/html/rfc7519
@@ -12,6 +13,7 @@
 :jdk-version: 11.0.1-open
 :keycloak: https://www.keycloak.org/[Keycloak^]
 :keycloak-version: 4.6.0.Final
+:uaa-version: 4.10.0
 :spring-boot: https://spring.io/projects/spring-boot[Spring Boot^]
 :sdkman: https://sdkman.io/[SDKMAN^]
 :jq: https://stedolan.github.io/jq/[jq^]
@@ -20,12 +22,13 @@
 This tutorial explains some {keycloak} (version {keycloak-version}) concepts by doing some practical labs.
 The primary focus of these labs is to explain how {spring-boot} applications can be secured by Keycloak.
 
-== Lab 1 - Setup a local development environment and start Keycloak
+== Lab: Setup a local development environment and start Keycloak
 
 Create dir and download keycloak.
 
+[subs=attributes]
 ----
-$ wget -c https://downloads.jboss.org/keycloak/4.6.0.Final/keycloak-4.6.0.Final.tar.gz
+$ wget -c https://downloads.jboss.org/keycloak/{keycloak-version}/keycloak-{keycloak-version}.tar.gz
 ----
 
 Setup JDK to use ({jdk-version}).
@@ -40,49 +43,59 @@ OpenJDK 64-Bit Server VM 18.9 (build 11.0.1+13, mixed mode)
 
 NOTE: `sdk` ({sdkman}) is a command line too used in this tutorial to set up the JDK version used.
 
-Extract keycloak:
+Extract Keycloak:
 
+[subs=attributes]
 ----
-$ tar xvfz keycloak-4.6.0.Final.tar.gz
+$ tar xvfz keycloak-{keycloak-version}.tar.gz
 ----
 
-Configure the KEYCLOAK_HOME and set the PATH for its binaries:
+Configure a `bashrc` file and use it (to simplify your life ;):
 
+[subs=attributes]
 ----
 $ cat > bashrc << EOF
 export KEYCLOAK_LAB=$PWD
-export KEYCLOAK_HOME=\$KEYCLOAK_LAB/keycloak-4.6.0.Final
+export KEYCLOAK_HOME=\$KEYCLOAK_LAB/keycloak-{keycloak-version}
 export PATH=\$KEYCLOAK_HOME/bin:\$PATH
+
+keycloak-start() {
+  \$KEYCLOAK_HOME/bin/standalone.sh -Djboss.socket.binding.port-offset=100
+}
+
 EOF
 $ source $PWD/bashrc
 $ echo "!!" >> ~/.bash_profile
 ----
 
-Extract and run keycloak.
+Run Keycloak:
 
 ----
-$ $KEYCLOAK_HOME/bin/standalone.sh -Djboss.socket.binding.port-offset=100
+$ keycloak-start
 ----
 
 Open http://localhost:8180 and configure the user and password to access de `Administration Console`.
 
 //$ kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin
 
-== Lab 2 - Run some quickstarts
+== Lab: Run quick start applications
+
+=== Download keycloak-quickstarts
 
 Clone https://github.com/keycloak/keycloak-quickstarts[keycloak-quickstarts].
 
+[subs=attributes]
 ----
 $ git clone https://github.com/keycloak/keycloak-quickstarts.git
 $ cd keycloak-quickstarts
-$ git checkout 4.6.0.Final
-$ git apply ../../patches/`basename $PWD`/pom.xml
+$ git checkout {keycloak-version}
+$ git apply ../patches/keycloack-quickstarts/pom.xml
 ----
 
 [[app-authz-rest-springboot]]
-=== Lab: app-authz-rest-springboot
+=== Run app-authz-rest-springboot
 
-The https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-authz-rest-springboot[app-authz-rest-springboot] quickstart
+The https://github.com/keycloak/keycloak-quickstarts/tree/{keycloak-version}/app-authz-rest-springboot[app-authz-rest-springboot] quickstart
 demonstrates how to protect a Spring Boot REST service using Keycloak Authorization Services.
 
 This quickstart tries to focus on the authorization features provided by Keycloak Authorization Services,
@@ -230,9 +243,9 @@ Using the token received for `jdoe` we can also access the `/api/premium` resour
 $ curl -v -X GET http://localhost:8080/api/premium -H "Authorization: Bearer $(cat jdoe.access_token)"
 ----
 
-=== Lab: app-authz-springboot
+=== Run app-authz-springboot
 
-The https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-authz-springboot[app-authz-springboot] quickstart demonstrates how to write a SpringBoot Web application where both authentication and authorization aspects are managed by Keycloak.
+The https://github.com/keycloak/keycloak-quickstarts/tree/{keycloak-version}/app-authz-springboot[app-authz-springboot] quickstart demonstrates how to write a SpringBoot Web application where both authentication and authorization aspects are managed by Keycloak.
 
 This application tries to focus on the authorization features provided by Keycloak Authorization Services, where resources are protected by a set of permissions and policies defined in Keycloak itself and access to these resources are enforced by a policy enforcer that intercepts every single request to the application.
 
@@ -271,13 +284,76 @@ $ mvn spring-boot:run
 Open http://localhost:8080.
 Test the app using the usernames provided (`alice` and `jdoe`).
 
-=== Lab: service-springboot-rest
+=== Run service-springboot-rest
 
-=== Lab: app-springboot
+The https://github.com/keycloak/keycloak-quickstarts/tree/{keycloak-version}/service-springboot-rest[service-springboot-rest] quickstart demonstrates how to write a RESTful service with SpringBoot that is secured with Keycloak.
 
-== Lab: Coding Spring Boot applications integrated with Keycloak (from scratch)
+Start it by running the tests:
 
-=== References
+----
+$ mvn test -Pspring-boot
+----
+
+Read https://github.com/keycloak/keycloak-quickstarts/blob/{keycloak-version}/service-springboot-rest/src/test/java/org/keycloak/quickstart/springboot/ProductServiceTest.java[ProductServiceTest.java] in order to understanding how to test a Keycloak app.
+
+=== Run app-springboot
+
+== Lab: Code Spring Boot applications integrated with Keycloak (from scratch)
+
+Read the article https://developers.redhat.com/blog/2017/05/25/easily-secure-your-spring-boot-applications-with-keycloak/[Easily secure your Spring Boot applications with Keycloak]
+(and see the referenced videos: https://www.youtube.com/watch&v=vpgRTPFDHAw[1] and https://www.youtube.com/watch?v=O5ePCWON08Y[2]).
+
+In order to simply run the code showed in this article you can do the following steps:
+
+----
+$ cd $KEYCLOAK_LAB
+$ git clone https://github.com/paulojeronimo/spring-boot-keycloak-tutorial
+$ cd spring-boot-keycloak-tutorial
+----
+
+Create a new realm on Keycloak by importng the file `springdemo.json`.
+
+Run:
+
+----
+$ mvn spring-boot:run
+----
+
+Access http://localhost:8080/products (User: `sebi`, Password: `sebi`).
+
+To switch to Spring Security version, stop (kbd:[Ctrl+C]) the running app and do the following commands:
+
+----
+$ git branch -a
+$ git checkout remotes/origin/spring-security
+----
+
+Compare this branch with the master branch:
+
+----
+$ git difftool master...origin/spring-security
+----
+
+Run:
+
+----
+$ mvn clean spring-boot:run
+----
+
+Access http://localhost:8080/products.
+
+[NOTE]
+====
+The GitHub repository https://github.com/sebastienblanc/spring-boot-keycloak-tutorial[sebastienblanc/spring-boot-keycloak-tutorial] has some useful forks (some with more features added):
+
+* https://github.com/yaseenkadir/spring-boot-keycloak-tutorial[yaseenkadir/spring-boot-keycloak-tutorial]
+* https://github.com/ykoer/spring-boot-keycloak-tutorial[yaseenkadir/spring-boot-keycloak-tutorial]
+* https://github.com/mmusaji/spring-boot-keycloak-tutorial[mmusaji/spring-boot-keycloak-tutorial]
+
+These most active forks were discovered by using https://techgaun.github.io/active-forks/index.html[this tool].
+====
+
+=== Other similar resources (even more updated)
 
 .https://www.youtube.com/watch?v=GY-5jwI_7nkh[Video (Feb 5, 2018): Easily Secure Your Front and Back End app with Keycloak]
 video::GY-5jwI_7nk[youtube]
@@ -285,9 +361,7 @@ video::GY-5jwI_7nk[youtube]
 .https://www.youtube.com/watch?v=3I4TXPxCCVE[Video (Nov 8, 2017): Easily secure and add Identity Management to your Spring Boot applications by Sebastien Blanc]
 video::3I4TXPxCCVE[youtube]
 
-__https://developers.redhat.com/blog/2017/05/25/easily-secure-your-spring-boot-applications-with-keycloak/[Article (May 25, 2017): Easily secure your Spring Boot applications with Keycloak]__
-
-== Lab: Running Keycloak in Docker and Kubernetes
+== Lab: Run Keycloak in Docker and Kubernetes
 
 TODO
 
@@ -305,17 +379,59 @@ video::gJ81eaGlN_I[youtube]
 .https://www.youtube.com/watch?v=NZI3C6vdjQk[Video (Mar 30, 2018): Setup Keycloak as an Identity Provider & OpenID Connect Token Issuer]
 video::NZI3C6vdjQk[youtube]
 
-== Lab: Running Keycloak in Cloud Foundry
+== Lab: Migrating Spring Boot microservices security from UAA to Keycloak
+
+=== A Spring Boot microservices app secured by UAA
+
+Setup the JDK to use version 8 (otherwise UAA will not compile on version {uaa-version}):
+
+----
+$ sdk default java 8u161-oracle
+----
+
+Start the UAA server:
+
+[subs=attributes]
+----
+$ cd $KEYCLOAK_LAB
+$ git clone https://github.com/cloudfoundry/uaa
+$ cd uaa && git checkout {uaa-version}
+$ ./gradlew run
+----
+
+Open another shell and clone the https://github.com/paulojeronimo/oauth-uaa-sample[oauth-uaa-sample^]:
+
+----
+$ cd $KEYCLOAK_LAB
+$ git clone https://github.com/paulojeronimo/oauth-uaa-sample
+$ cd oauth-uaa-sample
+----
+
+Follow the steps in https://github.com/paulojeronimo/oauth-uaa-sample/blob/master/README.adoc[oauth-uaa-sample/README.adoc^] to run the application.
+
+=== Migrating security from UAA to Keycloak
+
+TODO
+
+== Lab: Run Keycloak in Cloud Foundry
 
 TODO
 
 === References
 
-* https://stackoverflow.com/questions/44743371/how-to-deploy-keycloak-to-cloudfoundry
-* https://github.com/kirmerzlikin/keycloak-buildpack
-* https://github.com/thomasdarimont/spring-boot-keycloak-server-example
+.https://stackoverflow.com/questions/44743371/how-to-deploy-keycloak-to-cloudfoundr[Stack Overflow: How to deploy keycloak to cloudfoundry]
+&nbsp;
+
+.https://github.com/kirmerzlikin/keycloak-buildpack[GitHub: kirmerzlikin/keycloak-buildpack]
+&nbsp;
+
+.https://github.com/thomasdarimont/spring-boot-keycloak-server-example[GitHub: thomasdarimont/spring-boot-keycloak-server-example]
+&nbsp;
 
 == Other resources
+
+.https://developers.redhat.com/blog/2018/08/28/securing-apps-and-services-with-keycloak/[Article (August 28, 2018): Securing apps and services with Keycloak (Watch DevNation Live video)]
+&nbsp;
 
 .https://www.youtube.com/watch?v=mdZauKsMDiI[Video (Aug 16, 2018):  Securing apps and services with Keycloak authentication]
 video::mdZauKsMDiI[youtube]
