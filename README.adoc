@@ -413,6 +413,21 @@ Follow the steps in https://github.com/paulojeronimo/oauth-uaa-sample/blob/maste
 
 TODO
 
+== Lab: Keycloak build
+
+[subs=attributes]
+----
+$ git clone https://github.com/keycloak/keycloak
+$ cd keycloak
+$ git checkout {keycloak-version}
+$ mvn -Pdistribution -pl distribution/server-dist -am -Dmaven.test.skip clean install
+$ ls -l distribution/server-dist/target/
+....
+-rw-r--r--   1 pj  staff  229991646 Nov 23 07:55 keycloak-4.6.0.Final.tar.gz
+-rw-r--r--   1 pj  staff  231707513 Nov 23 07:55 keycloak-4.6.0.Final.zip
+....
+----
+
 == Lab: Run Keycloak in Cloud Foundry
 
 TODO

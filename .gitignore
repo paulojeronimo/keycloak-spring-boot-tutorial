@@ -1,5 +1,5 @@
 /README.html
-/keycloak-*
+/keycloak*
 /*.access_token
 /bashrc
 /spring-boot-keycloak-tutorial
