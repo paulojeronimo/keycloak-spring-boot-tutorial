@@ -523,7 +523,7 @@ video::3I4TXPxCCVE[youtube]
 
 Stop previous Keycloak instances.
 
-Configure your environment to use Keycloak {keycloack-4-version} and start it:
+Configure your environment to use Keycloak {keycloak-4-version} and start it:
 
 ----
 $ keycloak-use 4
@@ -837,6 +837,9 @@ TODO
 &nbsp;
 
 .https://github.com/kirmerzlikin/keycloak-buildpack[GitHub: kirmerzlikin/keycloak-buildpack]
+&nbsp;
+
+.https://github.com/thomasdarimont/springio18-spring-keycloak[GitHub: thomasdarimont/springio18-spring-keycloak]
 &nbsp;
 
 .https://github.com/thomasdarimont/spring-boot-keycloak-server-example[GitHub: thomasdarimont/spring-boot-keycloak-server-example]
