@@ -1,13 +1,13 @@
 diff --git a/pom.xml b/pom.xml
-index 9300df3..fbe555d 100644
+index 4da7a16..a16d30e 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -38,6 +38,8 @@
-         <version.wildfly>11.0.0.Final</version.wildfly>
-         <version.wildfly.core>3.0.10.Final</version.wildfly.core>
+         <version.wildfly>14.0.1.Final</version.wildfly>
          <version.keycloak>${project.version}</version.keycloak>
+ 
 +        <maven.compiler.target>1.8</maven.compiler.target>
 +        <maven.compiler.source>1.8</maven.compiler.source>
- 
          <version.wildfly.maven.plugin>1.2.2.Final</version.wildfly.maven.plugin>
-         <version.jboss.maven.plugin>7.4.Final</version.jboss.maven.plugin>
+         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
+         <jboss-jaxrs-api_2.1_spec>1.0.1.Final</jboss-jaxrs-api_2.1_spec>
