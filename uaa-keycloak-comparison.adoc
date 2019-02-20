@@ -359,7 +359,8 @@ Refs: <<UaaVA>>, https://www.altoros.com/blog/configuring-uaa-to-provide-a-singl
 
 // ------ Feature
 | {istio} support
-| No.
+| Yes. +
+Refs: http://blog.keycloak.org/2018/02/keycloak-and-istio.html
 | Yes. +
 Refs: <<UaaVA>>
 
