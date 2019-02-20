@@ -1,0 +1,491 @@
+= UAA vs Keycloak comparison
+:toc: left
+:toclevels: 4
+:numbered:
+:icons: font
+
+// Attributes
+:keycloak: <<keycloak,Keycloak>>
+:keycloak-current-version: 4.8.3.Final
+:cf-uaa: <<cf-uaa,CF UAA>>
+:cf-uaa-version: 4.28.0
+:adfs: <<adfs,ADFS>>
+:saml: <<saml,SAML>>
+:kubernetes: <<kubernetes,Kubernetes>>
+:cloud-foundry: <<cloud-foundry,Cloud Foundry>>
+:istio: <<istio,Istio>>
+:oauth2: <<oauth2,OAuth 2.0>>
+:openid-connect: <<openid-connect,OpenID Connect>>
+
+This document tries to offer a comparison table between features that are available in {cf-uaa} (version *{cf-uaa-version}*) and/or {keycloak} (*{keycloak-current-version}*).
+
+== Introduction
+
+When considering an SSO platform, we should analyze the following aspects/ requirements:
+
+* <<sso>>
+* <<standard-protocols>>
+* <<centralized-management>>
+* <<adapters>>
+* <<ldap-ad>>
+* <<social-login>>
+* <<identity-brokering>>
+* <<high-performance>>
+* <<clustering>>
+* <<themes>>
+* <<extensible>>
+* <<password-policies>>
+
+[[sso]]
+=== Single-Sing On
+
+Support for login once to multiple applications.
+
+The platform also should support for Single-Sign Out, which means that it should have options to force the log out of a single user (or all users) of the system.
+
+[[standard-protocols]]
+=== Standard Protocols
+
+Use of standard protocols like {openid-connect}, {oauth2} and {saml} 2.0.
+
+[[centralized-management]]
+=== Centralized Management
+
+Availability and features for admins and users.
+
+The platform should offer features like:
+
+* Determine how many active sessions our system currently has.
+* Options to force the logout of a single user (or all users) of the system.
+* Centralized password policy
+* One time password (OTP) policies
+* Authorization policies per resource or per scope
+* Timed access policy (users or group of users can login only between certain time slots)
+* JavaScript-Based policy
+* Rule-Based policy
+
+[[adapters]]
+=== Adapters
+
+Extensibility points to add secure applications and services easily.
+
+The SSO platform should offer adapters (libraries that makes it very easy to secure applications and service) for the application platforms we use: Spring Boot and JavaScript.
+
+[[ldap-ad]]
+=== LDAP and Active Directory
+
+Facility to do integration with existing user directories.
+
+The platform should support Kerberos logins and federate LDAP or Active Directory in just one configuration page.
+
+[[social-login]]
+=== Social Login
+
+The platform should enable us to login using social networks like Google, Facebook, Twitter, GitHub, etc.
+
+[[identity-brokering]]
+=== Identity Brokering
+
+{openid-connect} and {saml} 2.0 IdPs.
+
+[[high-performance]]
+=== High Performance
+
+Lightweight, fast and scalable.
+
+[[clustering]]
+=== Clustering
+
+For scalability and availability.
+
+[[themes]]
+=== Themes
+
+Customize look and feel.
+
+[[extensible]]
+=== Extensible
+
+Customize through code.
+
+The platform should be extensible enabling we to write our own authenticator or federator.
+We should have options to integrate our own code that authenticate a user with SSL client certificate.
+Also, maybe we should integrate a user database from a legacy system and use it as an identity source.
+
+[[password-policies]]
+=== Password Policies
+
+Customize password policies.
+
+////
+=== Adaptability
+
+To speed up development, it is fine that the solution uses an embedded datastore by default.
+But, for production envinronents we would like to be free to use our own database (Postgree or Oracle).
+
+//By fault, Keycloak uses the open source H2 database as its embedded datastore.
+//However, you are free to choose your own database: Oracle, Microsoft SQL Server, IBM DB2 , MySQL/MariaDB, or PostgreSQL.
+
+=== Scalability
+
+The platform must be scalable.
+
+//Keycloak use the Wildfly Clustering features which means you can use Infinispan (aka Red Hat JBoss DataGrid) caching to have clustered instances with sessions replicated across all the machines in the cluster.
+
+=== Extensibility
+
+The platform must be extensible enabling we to write our own authenticator or federator.
+
+//The Keycloak Service provider interface, enables you to write your own authenticator or federator.
+//You could use the authenticator, to integrate your own code that authenticate a user with SSL client certificate.
+//Using the federator, you could integrate the user database from a legacy system and use it as an identity source in Keycloak.
+
+=== Centralization
+
+The platform should offer a centralized session management where it's possible:
+
+* Determine how many active sessions our system currently has.
+* Options to force the logout of a single user (or all users) of the system.
+
+Logout All Limitations: Any SSO cookies set will be invalid and clients that request authentication in active browser sessions will now have to re-login.
+Only certain clients are notified of this logout event, specifically clients that are using the Keycloak OIDC client adapter.
+Other client types (i.e. {saml}) will not receive a backchannel logout request.
+////
+
+<<<
+== Comparison table
+
+[cols="a,a,a", options="header"]
+|===
+| Feature | Keycloak support, references and/or samples | UAA support, references and/or samples
+
+// ------ Feature
+//| Spring Boot 1.5.x support.
+//| Yes. +
+//Needs Keycloak 3.x.x.
+//| Yes.
+
+// ------ Feature
+//| Spring Boot 2.0.x support.
+//| Yes. +
+//Needs Keycloak 4.x.x. Refs: http://lists.jboss.org/pipermail/keycloak-user/2018-April/013643.html[1^], https://issues.jboss.org/browse/KEYCLOAK-5098[2^].
+//| Yes. +
+//Refs: http://www.java-allandsundry.com/2018/02/spring-boot-2-applications-and-oauth-2.html[1^], https://stackoverflow.com/questions/47871026/migrating-oauth-client-setup-from-spring-boot-1-5-9-to-2-0[2^].
+
+//| {oauth2} support.
+//| Yes.
+//| Yes.
+
+//* <<UaaDD>>
+
+// ------ Feature
+| Single Sign-On.
+| Yes. +
+Refs: <<KcDS>>
+| Yes. +
+Refs: <<UaaDF>>
+
+// ------ Feature
+| Single Sign-Out.
+| Yes. +
+Logout All Limitations: Any SSO cookies set will be invalid and clients that request authentication in active browser sessions will now have to re-login.
+Only certain clients are notified of this logout event, specifically clients that are using the Keycloak OIDC client adapter.
+Other client types (i.e. {saml}) will not receive a backchannel logout request.
+
+| Yes. +
+Through *OpenID Connect Session Management*. Refs.: <<UaaVA>>, <<UaaGB>>.
+Limitation: Single Logout only for Single Page Apps using *implict* flow.
+
+// ------ Feature
+| {openid-connect} support.
+| Yes. +
+Refs: <<KcVC>>
+| Yes. +
+Refs: <<UaaVA>>, https://forum.predix.io/questions/28442/does-uaa-support-openid-connect-session-management.html[1^]
+
+// ------ Feature
+| {saml} support.
+| Yes. +
+Refs: <<KcDI>>
+| Yes.
+Refs: <<UaaVA>>
+
+// ------ Feature
+| Identity Brokering - Authenticate with external {openid-connect} or {saml} Identity Providers.
+| Yes. +
+Refs: <<KcDR>>
+| Yes.
+
+// ------ Feature
+| Social Login - Enable login with Google, GitHub, Facebook, Twitter, and other social networks.
+| Yes. +
+Refs: <<KcGC>>, <<KcDH>>, <<KcGD>>
+| No.
+
+// ------ Feature
+| User Federation - Sync users from LDAP and Active Directory servers.
+| Yes. +
+Refs: <<KcDQ>>
+| Yes.
+
+// ------ Feature
+| Kerberos bridge - Automatically authenticate users that are logged-in to a Kerberos server.
+| Yes. +
+Refs: http://blog.keycloak.org/2015/04/kerberos-support-in-keycloak.html[1]
+| No.
+
+// ------ Feature
+| Admin UI for central management of users, roles, role mappings, clients and configuration.
+| Yes. +
+Refs: <<KcDA>>
+| No.
+
+// ------ Feature
+| Event notification
+| Yes.
+| No.
+
+// ------ Feature
+| Account Management UI that allows users to centrally manage their account.
+| Yes. +
+Refs: <<KcDF>>
+| Yes (but with many restrictions)
+
+// ------ Feature
+| Theme support - Customize all user facing pages to integrate with your applications and branding.
+| Yes. +
+Refs: <<KcGB>>, <<KcDE>>
+| Yes (with UAA fork)
+
+// ------ Feature
+| Two-factor Authentication - Support for TOTP/HOTP via Google Authenticator or FreeOTP.
+| Yes. +
+Refs: <<KcDO>>
+| Yes. +
+Has Google Authenticator Support. Refs: <<UaaVA>>
+
+// ------ Feature
+| Login flows - optional user self-registration, recover password, verify email, require password update, etc.
+| Yes. +
+Refs: https://www.keycloak.org/docs/latest/server_admin/index.html#_password-policies[1^], https://www.keycloak.org/docs/latest/server_admin/index.html#password-policy-types[2^]
+| Yes. +
+Only http://docs.cloudfoundry.org/api/uaa/version/4.10.0/#initiate-idp-login-flow[Initiate IDP Login Flow].
+
+// ------ Feature
+| Session management - Admins and users themselves can view and manage user sessions.
+| Yes. +
+Refs: <<KcDM>>
+| No.
+
+// ------ Feature
+| Opaque Tokens support.
+| Yes. +
+Refs: https://issues.jboss.org/browse/KEYCLOAK-1719[1^]
+| Yes. +
+Refs: https://www.cloudfoundry.org/blog/opaque-access-tokens-cloud-foundry/[1^], http://docs.cloudfoundry.org/api/uaa/version/4.10.0/#token[2^]
+
+// ------ Feature
+| Token exchange support.
+| Yes. +
+Refs: https://www.keycloak.org/docs/latest/securing_apps/index.html#_token-exchange[1^]
+| Yes. +
+Refs: https://schd.ws/hosted_files/cfsummit2017/8f/UAA-CF-Summit-2017-Upload.pdf[1^]
+
+// ------ Feature
+| Token mappers - Map user attributes, roles, etc. how you want into tokens and statements.
+| Yes. +
+Refs: <<KcDN>>
+| No.
+
+// ------ Feature
+| Access system based on a subset of assigned user roles
+| Yes.
+| Yes.
+
+// ------ Feature
+| Role-based access control (RBAC) support
+| Yes.
+| Yes. +
+Refs: https://www.slideshare.net/altoros/uaa-for-kubernetes[UAA for Kubernetes]
+
+// ------ Feature
+| Not-before revocation policies per realm, application and user.
+| Yes. +
+
+* Policies define the conditions that must be satisfied before granting access to an object. +
+Keyckloak defines many https://www.keycloak.org/docs/latest/authorization_services/index.html#_policy_overview[Managing Policies].
+* We can also https://www.keycloak.org/docs/latest/authorization_services/index.html#_permission_overview[Manage Permissions]. +
+A permission associates the object being protected and the policies that must be evaluated to decide whether access should be granted
+
+| No.
+
+// ------ Feature
+| CORS support - Client adapters have built-in support for CORS.
+| Yes. +
+Refs: <<KcDK>>
+| No.
+
+// ------ Feature
+| Service Provider Interfaces (SPI) - A number of SPIs to enable customizing various aspects of the server.
+Authentication flows, user federation providers, protocol mappers.
+| Yes. +
+Refs: <<KcDJ>>
+| No.
+
+// ------ Feature
+| Client adapters for JavaScript applications, WildFly, JBoss EAP, Fuse, Tomcat, Jetty, Spring, etc.
+| Yes. +
+Refs: <<KcDK>>
+| Yes. +
+UAA has https://docs.cloudfoundry.org/uaa/uaa-overview.html#client-tools[Client-Side Tools and Liraries] for Ruby, Java and JavaScript.
+
+// ------ Feature
+| Supports any platform/language that has an {openid-connect} Resource Provider library or {saml} 2.0 Service Provider library.
+| Yes. +
+Refs: <<KcDL>>
+|
+
+// ------ Feature
+| {cloud-foundry} support
+| Yes.
+| Yes.
+
+// ------ Feature
+| {kubernetes} support
+| Yes. +
+Refs: <<KcVE>>
+| Yes. +
+Refs: <<UaaVA>>, https://www.altoros.com/blog/configuring-uaa-to-provide-a-single-entry-point-for-kubernetes-and-cloud-foundry/[1^]
+
+// ------ Feature
+| {istio} support
+| No.
+| Yes. +
+Refs: <<UaaVA>>
+
+|===
+
+<<<
+== References
+
+* [[cf-uaa]] CF UAA:
+** GitHub:
+*** [[UaaGA]] [UaaGA] https://github.com/cloudfoundry/uaa
+*** [[UaaGB]] [UaaGB] https://github.com/cloudfoundry/uaa-singular
+** Documents:
+*** [[UaaDA]] [UaaDA] https://www.cloudfoundry.org/blog/high-level-features-of-the-uaa/[High Level Features of the UAA^]
+*** [[UaaDB]] [UaaDB] http://docs.cloudfoundry.org/api/uaa/version/4.10.0/[UAA API Reference^]
+*** [[UaaDC]] [UaaDC] https://www.cloudfoundry.org/?s=uaa&post_type=blog_posts[UAA Blog Posts^]
+*** [[UaaDD]] [UaaDD] https://www.cloudfoundry.org/blog/oauth-rest/[Securing RESTful Web Services with OAuth2^]
+*** [[UaaDE]] [UaaDE] https://docs.cloudfoundry.org/concepts/architecture/uaa.html[User Account and Authentication (UAA) Server^]
+*** [[UaaDF]] [UaaDF] https://docs.cloudfoundry.org/services/dashboard-sso.html#enabling-the-feature[Enabling the SSO Feature^]
+** Videos:
+*** [[UaaVA]] [UaaVA] https://www.youtube.com/watch?v=Nd56kXRP16E[Apr 27, 2018: Cloud Foundry UAA Overview and Roadmap - Sree Tummidi, Pivotal^]
+*** [[UaaVB]] [UaaVB] https://www.youtube.com/watch?v=1J_zLQohZdg[Jun 23, 2017: UAA Feature Updates and 2017 Roadmap^]
+*** [[UaaVC]] [UaaVC] https://www.youtube.com/watch?v=r7TGGHkp7v0[Single Sign-On Service 1.4 Demo for Pivotal Cloud Foundry^]
+*** [[UaaVD]] [UaaVD] https://www.infoq.com/presentations/cloud-foundry-uaa[Jun 17, 2018: Cloud Foundry UAA as an Identity Gateway^]
+
+* [[keycloak]] Keycloak:
+** GitHub:
+*** [[KcGA]] [KcGA] https://github.com/keycloak
+*** [[KcGB]] [KcGB] https://github.com/keycloak/keycloak/tree/master/examples/themes
+*** [[KcGC]] [KcGC] https://github.com/keycloak/keycloak/tree/master/examples/broker/facebook-authentication
+*** [[KcGD]] [KcGD] https://github.com/keycloak/keycloak/tree/master/examples/broker/google-authentication
+** Documents:
+*** [[KcDA]] [KcDA] https://www.keycloak.org/docs/latest/server_admin/index.html#admin-console[Admin Console^]
+*** [[KcDB]] [KcDB] https://www.keycloak.org/docs/latest/server_admin/index.html#features[Keycloak features^]
+*** [[KcDC]] [KcDC] https://developers.redhat.com/blog/2018/03/19/sso-made-easy-keycloak-rhsso/[Single Sign-On Made Easy with Keycloak / Red Hat SSO^]
+*** [[KcDD]] [KcDD] https://developers.redhat.com/blog/2017/10/18/openid-connect-identity-brokering-red-hat-single-sign/[OpenID Connect Identity Brokering with Red Hat Single Sign-On^]
+*** [[KcDE]] [KcDE] https://medium.com/@auscunningham/create-a-custom-theme-for-keycloak-8781207be604[Create a custom theme for Keycloak^]
+*** [[KcDF]] [KcDF] https://www.keycloak.org/docs/latest/server_admin/index.html#user-management[User Management^]
+*** [[KcDG]] [KcDG] https://developers.redhat.com/blog/2018/10/08/configuring-nginx-keycloak-oauth-oidc/[Configuring NGINX for OAuth/OpenID Connect SSO with Keycloak/Red Hat SSO^]
+*** [[KcDH]] [KcDH] https://www.keycloak.org/docs/latest/server_admin/index.html#social-identity-providers[Social Identity Providers^]
+*** [[KcDI]] [KcDI] https://www.keycloak.org/docs/latest/server_admin/index.html#_saml[SAML^]
+*** [[KcDJ]] [KcDJ] https://www.keycloak.org/docs/latest/server_development/index.html#_providers[Service Provider Interfaces (SPI)^]
+*** [[KcDK]] [KcDK] https://www.keycloak.org/docs/latest/securing_apps/index.html#what-are-client-adapters[What are Client Adapters?^]
+*** [[KcDL]] [KcDL] https://www.keycloak.org/docs/latest/securing_apps/index.html#openid-connect-3[OpenID Connect^]
+*** [[KcDM]] [KcDM] https://www.keycloak.org/docs/latest/server_admin/index.html#user-session-management[User Session Management^]
+*** [[KcDN]] [KcDN] https://www.keycloak.org/docs/latest/server_admin/index.html#_protocol-mappers[OIDC Token and SAML Assertion Mappings]
+*** [[KcDO]] [KcDO] https://rhelblog.redhat.com/2015/06/04/identity-management-and-two-factor-authentication-using-one-time-passwords/[Identity Management and Two-Factor Authentication Using One-Time Passwords^]
+*** [[KcDP]] [KcDP] https://developers.redhat.com/blog/2018/08/28/securing-apps-and-services-with-keycloak/[Securing apps and services with Keycloak (Watch DevNation Live video)^]
+*** [[KcDQ]] [KcDQ] https://www.keycloak.org/docs/latest/server_admin/index.html#_ldap[LDAP and Active Directory^]
+*** [[KcDR]] [KcDR] https://www.keycloak.org/docs/latest/server_admin/index.html#_identity_broker[Identity Brokering]
+*** [[KcDS]] [KcDS] https://www.keycloak.org/docs/latest/server_admin/index.html#sso-protocols[SSO Protocols]
+** Videos:
+*** [[KcVA]] [KcVA] https://developers.redhat.com/videos/youtube/Bdg_DjuoX0A/[[DevNation Live\] Secure Spring Boot Microservices with Keycloak^]
+*** [[KcVB]] [KcVB] https://www.youtube.com/watch?v=1tWiJZZfrPo[Federation with Keycloak and FreeIPA^]
+*** [[KcVC]] [KcVC] https://www.youtube.com/watch?v=NZI3C6vdjQk[Setup Keycloak as an Identity Provider & OpenID Connect Token Issuer^]
+*** [[KcVD]] [KcVD] https://www.youtube.com/watch?v=mdZauKsMDiI[Securing apps and services with Keycloak authentication^]
+*** [[KcVE]] [KcVE] https://www.youtube.com/watch?v=A_BYZ7hHWXE[Keycloak on Kubernetes^]
+
+* [[oauth2]] OAuth 2.0:
+** Documents:
+*** https://oauth.net/2/[OAuth 2.0^]
+
+* [[openid]] OpenID:
+** Documents:
+*** [[openid-connect]] https://en.wikipedia.org/wiki/OpenID_Connect[OpenID Connect^]
+
+* [[adfs]] ADFS:
+** Documents:
+*** https://en.wikipedia.org/wiki/Active_Directory_Federation_Services[ADFS^]
+*** https://www.okta.com/blog/2018/06/what-is-adfs/[What is ADFS?^]
+
+* [[saml]] SAML:
+** Videos:
+*** https://www.youtube.com/watch?v=gUmMcecHN9s[SAML 101^]
+*** https://www.youtube.com/watch?v=i8wFExDSZv0[SAML Overview^]
+
+* [[cloud-foundry]] Cloud Foundry
+** Documents:
+*** https://www.cloudfoundry.org/
+
+* [[kubernetes]] Kubernetes
+** Documents:
+*** https://kubernetes.io/
+
+* [[istio]] Istio
+** Documents:
+*** https://istio.io/
+*** https://www.infoq.com/istio
+
+////
+Other links:
+
+* Pivotal:
+** https://community.pivotal.io/s/article/Advisory--Recommended-actions-for-Applications-Secured-by-Single-Sign-On-Service-for-PCF
+** https://community.pivotal.io/s/article/Single-Sign-On-Service-SSO-on-PWS
+
+* UAA:
+** https://www.hascode.com/2017/11/identity-management-one-time-passwords-and-two-factor-auth-with-spring-boot-and-keycloak/
+** https://stackoverflow.com/questions/49424394/keycloak-2fa-protection-for-a-specific-resource
+** https://issues.jboss.org/browse/KEYCLOAK-4182
+** http://keycloak-user.88327.x6.nabble.com/keycloak-user-Two-Factor-Authentication-in-Keycloak-using-text-message-or-email-to-the-user-td2649.html
+** https://blog.scalac.io/user-authentication-with-keycloak-part1.html
+** https://witekio.com/blog/authentication-management-focus-keycloak/
+** https://www.youtube.com/watch?v=EDLCfTLEeJU
+** https://phoenixnap.com/blog/integrate-keycloak-sso-duo-2fa-vcloud
+** https://forum.predix.io/questions/28442/does-uaa-support-openid-connect-session-management.html
+** https://starkandwayne.com/blog/using-the-check-token-endpoint/
+** https://docs.huihoo.com/cloudfoundry/uaa-identify-at-cf.pdf
+** http://cf-dev.70369.x6.nabble.com/cf-dev-CF-UAA-Refresh-Token-td1338.html
+** https://github.com/prosociallearnEU/cf-nodejs-client
+** https://cfsummit2017.sched.com/event/AFjy/uaa-feature-updates-and-2017-roadmap-i-sree-tummidi-pivotal
+** https://www.slideshare.net/Pivotal/cloud-foundry-uaa-as-an-identity-gateway
+
+** Kubernetes:
+*** https://www.altoros.com/blog/configuring-uaa-to-provide-a-single-entry-point-for-kubernetes-and-cloud-foundry/
+
+* Comparisons:
+** https://compare.evolveum.com/features-table.html
+** https://www.openiam.com/products/identity-manager/ce-vs-ee-feature-comparison/
+
+* Other:
+** https://access.redhat.com/articles/2342881
+** https://git.framasoft.org/hoohoot/synapse-keycloak-adapter
+** https://medium.com/@BoweiHan/elijd-single-sign-on-saml-and-single-logout-624efd5a224
+** https://hajekj.net/2017/02/27/to-single-sign-out-or-not-to/
+** https://stackoverflow.com/questions/46799906/difference-between-single-sign-out-and-single-log-out
+** https://gearpump.apache.org/releases/latest/deployment/deployment-ui-authentication/
+** http://cf-dev.70369.x6.nabble.com/cf-dev-Cloudfoundry-UAA-Questions-td242.html
+////

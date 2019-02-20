@@ -1,33 +1,43 @@
 = Keycloak tutorial to secure Spring Boot applications
 :toc: left
 :toclevels: 4
-:numbered:
 :icons: font
 :imagesdir: images
 :experimental:
+:sectanchors:
 
 // URIs
 :uri-jwt-rfc: https://tools.ietf.org/html/rfc7519
 
 // Attributes
-:jdk-version: 11.0.1-open
+:jdk-8-version: 8u161-oracle
+:jdk-11-version: 11.0.2-open
 :keycloak: https://www.keycloak.org/[Keycloak^]
 :keycloak-3-version: 3.4.3.Final
 :keycloak-3-docs: https://www.keycloak.org/archive/documentation-3.4.html
-:keycloak-4-version: 4.7.0.Final
-:keycloak-4-docs: https://www.keycloak.org/archive/documentation-4.7.html
-:uaa-version: 4.10.0
+:keycloak-4-version: 4.8.3.Final
+:keycloak-4-docs: https://www.keycloak.org/archive/documentation-4.8.html
+:uaa: https://github.com/cloudfoundry/uaa[UAA^]
+:uaa-version: 4.28.0
 :spring-boot: https://spring.io/projects/spring-boot[Spring Boot^]
 :sdkman: https://sdkman.io/[SDKMAN^]
 :jq: https://stedolan.github.io/jq/[jq^]
 :jwt-cli: https://github.com/troyharvey/jwt-cli[jwt-cli^]
 
+[[introduction]]
 == Introduction
 
-This tutorial explains some {keycloak} concepts by doing some practical labs using versions {keycloak-3-version} ({keycloak-3-docs}[docs]) and {keycloak-4-version} ({keycloak-4-docs}[docs]).
-The primary focus of these labs is to explain how {spring-boot} applications can be secured by Keycloak.
+This document presents you a set of labs (and/ with references) related to {keycloak} and {uaa} that you can do to increase your knowledge in these security tools.
 
-== Lab: Setup the JDK local development environment
+The {keycloak} labs here are configured to use the following versions: {keycloak-3-version} ({keycloak-3-docs}[docs]) and {keycloak-4-version} ({keycloak-4-docs}[docs]).
+
+The {uaa} labs are configured to use the following versions: {uaa-version}.
+
+These labs were created and tested in a macOS environment.
+But, it can be easily adapted to run in other environments like Linux or Windows (with some Bash support).
+
+[[lab-a]]
+== Lab A: Setup the JDK local development environment
 
 NOTE: `sdk` ({sdkman}) is a command line too used in this tutorial to set up the JDK version used. To proceed the next steps you must install it.
 
@@ -35,121 +45,86 @@ List available JDK versions:
 
 ----
 $ sdk list java
-================================================================================
-Available Java Versions
-================================================================================
-     12.ea.20-open       1.0.0-rc-9-grl                                         
-     11.0.1-zulu         1.0.0-rc-8-grl                                         
-   * 11.0.1-open                                                                
-     10.0.2-zulu                                                                
-     10.0.2-open                                                                
-     9.0.7-zulu                                                                 
-     9.0.4-open                                                                 
-   + 9.0.4-oracle                                                               
- > + 8u161-oracle                                                               
-   + 8u152-zulu                                                                 
-     8.0.192-zulu                                                               
-     8.0.191-oracle                                                             
-   + 7u141-zulu                                                                 
-     7.0.181-zulu                                                               
-     1.0.0-rc-10-grl                                                            
-
-================================================================================
-+ - local version
-* - installed
-> - currently in use
-================================================================================
 ----
+
+See link:outputs/a1.txt[].
 
 Install JDK 8:
 
+[subs="+attributes"]
 ----
-$ sdk install java 8u161-oracle
+$ sdk install java {jdk-8-version}
 ----
 
 Install JDK 11:
 
+[subs="+attributes"]
 ----
-$ sdk install java 11.0.1-open
+$ sdk install java {jdk-11-version}
+----
+
+Check the version:
+
+----
 $ java -version
-openjdk version "11.0.1" 2018-10-16
-OpenJDK Runtime Environment 18.9 (build 11.0.1+13)
-OpenJDK 64-Bit Server VM 18.9 (build 11.0.1+13, mixed mode)
 ----
+
+See link:outputs/a2.txt[].
 
 Set default JDK to version 8:
 
+[subs="+attributes"]
 ----
-$ sdk default java 8u161-oracle
+$ sdk default java {jdk-8-version}
 $ java -version
-java version "1.8.0_161"
-Java(TM) SE Runtime Environment (build 1.8.0_161-b12)
-Java HotSpot(TM) 64-Bit Server VM (build 25.161-b12, mixed mode)
 ----
 
-== Lab: Keycloak versions download
+See link:outputs/a3.txt[].
 
-Create dir and download the versions of Keycloak used in this tutorial:
+[[lab-b]]
+== Lab B: Keycloak versions download and install
 
-[subs=attributes]
+[[lab-b1]]
+=== Lab B1: Keycloak download
+
+[NOTE]
+====
+You can skip the following steps if you want to <<lab-c,build keycloak>>.
+After that, return to <<lab-b2,Lab B2>>.
+====
+
+Download the versions of Keycloak used in this tutorial:
+
+[subs="+attributes"]
 ----
 $ wget -c https://downloads.jboss.org/keycloak/{keycloak-3-version}/keycloak-{keycloak-3-version}.tar.gz
 $ wget -c https://downloads.jboss.org/keycloak/{keycloak-4-version}/keycloak-{keycloak-4-version}.tar.gz
 ----
 
-[NOTE]
-====
-You can skip the steps above if you want follow the steps to <<keycloak-build,build keycloak>>.
-After that, return to this point.
-====
+[[lab-b2]]
+=== Lab B2: Keycloak install
 
 Extract both Keycloak versions:
 
-[subs=attributes]
+[subs="+attributes"]
 ----
 $ tar xvfz keycloak-{keycloak-3-version}.tar.gz
 $ tar xvfz keycloak-{keycloak-4-version}.tar.gz
 ----
 
-Configure a `bashrc` file and use it (to simplify your life ;):
+Let's Source the file link:scripts/bashrc[] (and include it in `~/.bash_profile`).
+We'll use this file to define some variables and functions simplifying our life!
 
-[subs=attributes]
 ----
-$ cat > bashrc << EOF
-export KEYCLOAK_LAB=$PWD
-export KEYCLOAK_HOME=\$KEYCLOAK_LAB/keycloak-bin
-export PATH=\$KEYCLOAK_HOME/bin:\$PATH
-
-keycloak-use() {
-  pushd \$KEYCLOAK_LAB &> /dev/null
-  case \$1 in
-    3|4)
-      rm -f keycloak-bin
-      if [ "\$1" = "3" ]
-      then
-        ln -s keycloak-{keycloak-3-version} keycloak-bin
-      else
-        ln -s keycloak-{keycloak-4-version} keycloak-bin
-      fi
-      ;;
-    *) echo "Use 3 or 4!";;
-  esac
-  popd &> /dev/null
-}
-
-keycloak-start() {
-  \$KEYCLOAK_HOME/bin/standalone.sh -Djboss.socket.binding.port-offset=100
-}
-
-[ -L \$KEYCLOAK_LAB/keycloak-bin ] || keycloak-use 4
-EOF
-
-$ source $PWD/bashrc
+$ source $PWD/scripts/bashrc
 $ echo "!!" >> ~/.bash_profile
 ----
 
-[[keycloak-build]]
-== Lab: Keycloak versions build
+[[lab-c]]
+== Lab C: Keycloak versions build
+
+NOTE: This is an optional lab if you followed the steps in <<lab-b2,Lab B2>>.
+Skip directly to <<lab-d,Lab D>> if you dont't want details about how to build Keycloak.
 
 Download Keycloak source code:
 
@@ -162,53 +137,78 @@ Check the last 2 versions available for Keycloak version 3:
 
 ----
 $ git tag | grep '^3.*Final' | tail -2
-3.4.3.Final
-3.4.3.Final-2
 ----
+
+See link:outputs/c1.txt[].
 
 Compile version {keycloak-3-version}:
 
-[subs=attributes]
+[subs="+attributes"]
 ----
 $ git checkout {keycloak-3-version}
 $ mvn install -Pdistribution -DskipTests
+----
+
+NOTE: You'll get errors if you try to compile {keycloak-3-version} using JDK {jdk-11-version} version.
+So, pay attention if you configured your current JDK version to {jdk-8-version} version.
+
+Check the built files:
+
+----
 $ ls -l distribution/server-dist/target/*.{tar.gz,zip}
 ----
 
-Save the built distribution to KEYCLOAK_LAB:
+Save the built distribution to `KEYCLOAK_LAB`:
 
-[subs=attributes]
+[subs="+attributes"]
 ----
 $ cp distribution/server-dist/target/keycloak-{keycloak-3-version}.tar.gz ..
 ----
 
-NOTE: Version {keycloak-3-version} is the https://access.redhat.com/articles/2342881[version of Keycloak used in RHSSO] (this means more stability).
+NOTE: Keycloak version {keycloak-3-version} is used in https://access.redhat.com/articles/2342881[RHSSO 7.2] (this means more stability). +
+Keycloak version {keycloak-4-version} is currently used in RHSSO 7.3.
 
 Check the last 2 versions available for Keycloak version 4:
 
 ----
 $ git tag | grep '^4.*Final' | tail -2
-4.6.0.Final
-4.7.0.Final
 ----
+
+See link:outputs/c2.txt[].
 
 Compile version {keycloak-4-version}:
 
-[subs=attributes]
+[subs="+attributes"]
 ----
 $ git checkout {keycloak-4-version}
 $ mvn -Pdistribution -pl distribution/server-dist -am -Dmaven.test.skip clean install
+----
+
+See link:outputs/c3.txt[].
+
+NOTE: As the same case as in Keycloak 3, if you try to compile Keycloak 4 using JDK version {jdk-11-version} you will get errors.
+
+----
 $ ls -l distribution/server-dist/target/*.{tar.gz,zip}
 ----
 
-Save the built distribution to KEYCLOAK_LAB:
+Save the built distribution to `KEYCLOAK_LAB`:
 
-[subs=attributes]
+[subs="+attributes"]
 ----
 $ cp distribution/server-dist/target/keycloak-{keycloak-4-version}.tar.gz ..
 ----
 
-== Lab: Running keycloak
+Go back to the `KEYCLOAK_LAB` directory:
+
+----
+$ cd ..
+----
+
+Follow the steps in <<lab-b2,Lab B2>>.
+
+[[lab-d]]
+== Lab D: Running keycloak
 
 Run Keycloak:
 
@@ -218,13 +218,16 @@ $ keycloak-start
 
 Open http://localhost:8180 and configure the user and password to access de `Administration Console`.
 
-== Lab: Running quick start applications
+[[lab-e]]
+== Lab E: Running quick start applications
 
 === Download keycloak-quickstarts
 
+Leave Keycloak running and open another shell.
+
 Clone https://github.com/keycloak/keycloak-quickstarts[keycloak-quickstarts]:
 
-[subs=attributes]
+[subs="+attributes"]
 ----
 $ git clone https://github.com/keycloak/keycloak-quickstarts.git
 $ cd keycloak-quickstarts
@@ -291,7 +294,7 @@ $ mvn spring-boot:run
 Backing to the dir `$KEYCLOAK_LAB`, let's obtain the OAuth2 access token for user `alice`:
 
 ----
-$ cd $KEYCLOAK_LAB
+$ keycloak-lab
 $ curl -X POST \
   http://localhost:8180/auth/realms/spring-boot-quickstart/protocol/openid-connect/token \
   -H 'Authorization: Basic YXBwLWF1dGh6LXJlc3Qtc3ByaW5nYm9vdDpzZWNyZXQ=' \
@@ -442,9 +445,11 @@ $ mvn test -Pspring-boot
 
 Read https://github.com/keycloak/keycloak-quickstarts/blob/{keycloak-4-version}/service-springboot-rest/src/test/java/org/keycloak/quickstart/springboot/ProductServiceTest.java[ProductServiceTest.java] in order to understanding how to test a Keycloak app.
 
-== Lab: Developing Spring Boot applications integrated with Keycloak (from scratch)
+[[lab-f]]
+== Lab F: Developing Spring Boot applications integrated with Keycloak (from scratch)
 
-=== Lab: Executing Sebastien Blanc tutorial
+[[lab-f1]]
+=== Lab F1: Executing Sebastien Blanc tutorial
 
 Read the article https://developers.redhat.com/blog/2017/05/25/easily-secure-your-spring-boot-applications-with-keycloak/[Easily secure your Spring Boot applications with Keycloak]
 (and see the referenced videos: https://www.youtube.com/watch?v=vpgRTPFDHAw[1^] and https://www.youtube.com/watch?v=O5ePCWON08Y[2^]).
@@ -463,7 +468,7 @@ $ keycloak-start
 Clone the project:
 
 ----
-$ cd $KEYCLOAK_LAB
+$ keycloak-lab
 $ git clone https://github.com/paulojeronimo/spring-boot-keycloak-tutorial
 $ cd spring-boot-keycloak-tutorial
 ----
@@ -519,28 +524,43 @@ video::GY-5jwI_7nk[youtube]
 .https://www.youtube.com/watch?v=3I4TXPxCCVE[Video (Nov 8, 2017): Easily secure and add Identity Management to your Spring Boot applications by Sebastien Blanc]
 video::3I4TXPxCCVE[youtube]
 
-=== Lab: Creating a resource server (backend) using kcadm, gradle and spring-security
+[[lab-f2]]
+=== Lab F2: Creating a resource server (backend) using kcadm, gradle and spring-security
 
 Stop previous Keycloak instances.
 
-Configure your environment to use Keycloak {keycloak-4-version} and start it:
+Configure your environment to use Keycloak {keycloak-4-version}, reinstall and start it:
 
 ----
 $ keycloak-use 4
+$ keycloak-install
 $ keycloak-start
 ----
 
+Access http://localhost:8180 and create the `admin` with password `admin`.
+
 Do the following steps:
 
+Change to the labs dir:
+
 ----
-$ cd $KEYCLOAK_LAB
+$ keycloak-lab
+----
+
+Create the sample by using https://start.spring.io[Spring Initializr]:
+
+----
+$ rm -rf samples/keycloak-resource-server-demo/
+$ mkdir -p samples/ && cd $_
 $ curl https://start.spring.io/starter.tgz \
-  -d bootVersion=2.0.7.RELEASE \
-  -d dependencies=web,security,keycloak \
+  -d bootVersion=2.1.3.RELEASE \
+  -d dependencies=web,security \
   -d type=gradle-project \
   -d baseDir=keycloak-resource-server-demo \
-  -type=gradle-project | tar -xzvf -
+  | tar -xzvf -
 ----
+
+Do your first commit:
 
 ----
 $ cd keycloak-resource-server-demo
@@ -549,114 +569,58 @@ $ git add -A
 $ git commit -m 'Initial commit'
 ----
 
-----
-$ cat ../patches/keycloak-resource-server-demo/build.gradle
-$ git apply $_
-----
+Apply the following patch to configure keycloack support on `build.gradle`:
 
 ----
-$ cat > src/main/java/com/example/demo/HelloEndpoint.java <<'EOF'
-package com.example.demo;
-
-import org.springframework.security.access.annotation.Secured;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-@RestController
-public class HelloEndpoint {
-
-    @GetMapping("/admin/hello")
-    @Secured("ROLE_ADMIN")
-    public String sayHelloToAdmin() {
-        return "Hello Admin";
-    }
-
-    @GetMapping("/user/hello")
-    @Secured("ROLE_USER")
-    public String sayHelloToUser() {
-        return "Hello User";
-    }
-
-    @GetMapping("/guest/hello")
-    public String sayHelloToGuest() {
-        return "Hello Guest";
-    }
-
-}
-EOF
+$ git apply ../../patches/keycloak-resource-server-demo/build.gradle.diff
 ----
 
+See link:patches/keycloak-resource-server-demo/build.gradle.diff[]
+
+Create REST endpoints that will be secured:
+
 ----
-$ cat > src/main/java/com/example/demo/KeycloakSecurityConfigurer.java <<'EOF'
-package com.example.demo;
-
-import org.keycloak.adapters.KeycloakConfigResolver;
-import org.keycloak.adapters.springboot.KeycloakSpringBootConfigResolver;
-import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationProvider;
-import org.keycloak.adapters.springsecurity.config.KeycloakWebSecurityConfigurerAdapter;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.authority.mapping.SimpleAuthorityMapper;
-import org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy;
-import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
-
-@Configuration
-@EnableWebSecurity
-@EnableGlobalMethodSecurity(securedEnabled = true)
-public class KeycloakSecurityConfigurer extends KeycloakWebSecurityConfigurerAdapter {
-
-  @Autowired
-  public void configureGlobal(final AuthenticationManagerBuilder auth) {
-    final SimpleAuthorityMapper mapper = new SimpleAuthorityMapper();
-    mapper.setConvertToUpperCase(true);
-
-    final KeycloakAuthenticationProvider provider = keycloakAuthenticationProvider();
-    provider.setGrantedAuthoritiesMapper(mapper);
-
-    auth.authenticationProvider(provider);
-  }
-
-  @Override
-  protected SessionAuthenticationStrategy sessionAuthenticationStrategy() {
-    return new NullAuthenticatedSessionStrategy();
-  }
-
-  @Override
-  protected void configure(final HttpSecurity http) throws Exception {
-    super.configure(http);
-    http.authorizeRequests();
-  }
-
-  @Bean
-  KeycloakConfigResolver keycloakConfigResolver() {
-    return new KeycloakSpringBootConfigResolver();
-  }
-}
-EOF
+$ d=src/main/java/com/example/demo
+$ cp ../../starts/keycloak-resource-server-demo/$d/HelloEndpoint.java $d/
 ----
+
+See link:starts/keycloak-resource-server-demo/src/main/java/com/example/demo/HelloEndpoint.java[]
+
+Configure the Keycloak security:
+
+----
+$ cp ../../starts/keycloak-resource-server-demo/$d/KeycloakSecurityConfigurer.java $d/
+----
+
+See link:starts/keycloak-resource-server-demo/src/main/java/com/example/demo/KeycloakSecurityConfigurer.java[]
+
+Login into Keycloak as an administrator through the command line:
 
 ----
 $ kcadm.sh config credentials --server http://localhost:8180/auth --realm master --user admin --password admin
 ----
 
+Create a REALM:
+
 ----
 $ kcadm.sh create realms -s realm=spring-security-example -s enabled=true
 ----
+
+Create the clients:
 
 ----
 $ CID1=$(kcadm.sh create clients -r spring-security-example -s clientId=curl -s enabled=true -s publicClient=true -s baseUrl=http://localhost:8080 -s adminUrl=http://localhost:8080 -s directAccessGrantsEnabled=true -i)
 $ CID2=$(kcadm.sh create clients -r spring-security-example -s clientId=spring-security-demo-app -s enabled=true -s baseUrl=http://localhost:8080 -s bearerOnly=true -i)
 ----
 
+Add some roles:
+
 ----
 $ kcadm.sh create clients/$CID2/roles -r spring-security-example -s name=admin -s 'description=Admin role'
 $ kcadm.sh create clients/$CID2/roles -r spring-security-example -s name=user -s 'description=User role'
 ----
+
+Get the client configuration to know how to configure your application.properties:
 
 ----
 $ kcadm.sh  get clients/$CID2/installation/providers/keycloak-oidc-keycloak-json -r spring-security-example
@@ -670,7 +634,11 @@ $ kcadm.sh  get clients/$CID2/installation/providers/keycloak-oidc-keycloak-json
   "use-resource-role-mappings" : true,
   "confidential-port" : 0
 }
+----
 
+Configure the `application.properties`:
+
+----
 $ cat > src/main/resources/application.properties <<'EOF'
 keycloak.realm=spring-security-example
 keycloak.bearer-only=true
@@ -682,11 +650,15 @@ keycloak.confidential-port=0
 EOF
 ----
 
+Create the user `joe_admin` and some add roles:
+
 ----
 $ joe=$(kcadm.sh create users -r spring-security-example -s username=joe_admin -s enabled=true -i)
 $ kcadm.sh update users/$joe/reset-password -r spring-security-example -s type=password -s value=admin -s temporary=false -n
 $ kcadm.sh add-roles -r spring-security-example --uusername=joe_admin --cclientid spring-security-demo-app --rolename admin
 ----
+
+Create the user `jim_user` and some add roles:
 
 ----
 $ jim=$(kcadm.sh create users -r spring-security-example -s username=jim_user -s enabled=true -i)
@@ -694,13 +666,15 @@ $ kcadm.sh update users/$jim/reset-password -r spring-security-example -s type=p
 $ kcadm.sh add-roles -r spring-security-example --uusername=jim_user --cclientid spring-security-demo-app --rolename user
 ----
 
+Start the application:
+
 ----
 $ ./gradlew bootRun
 ----
 
-----
-$ # Test with user joe_admin
+Test the application with user `joe_admin`:
 
+----
 $ export JOE_TOKEN=`curl -ss --data "grant_type=password&client_id=curl&username=joe_admin&password=admin" http://localhost:8180/auth/realms/spring-security-example/protocol/openid-connect/token | jq -r .access_token`
 
 $ jwt $JOE_TOKEN
@@ -712,9 +686,9 @@ $ curl -H "Authorization: bearer $JOE_TOKEN" http://localhost:8080/user/hello
 {"timestamp":1544591383960,"status":403,"error":"Forbidden","message":"Access is denied","path":"/user/hello"}
 ----
 
-----
-$ # Test with user jim_user
+Test the application with user `jim_user`:
 
+----
 $ export JIM_TOKEN=`curl -ss --data "grant_type=password&client_id=curl&username=jim_user&password=admin" http://localhost:8180/auth/realms/spring-security-example/protocol/openid-connect/token | jq -r .access_token`
 
 $ curl -H "Authorization: bearer $JIM_TOKEN" http://localhost:8080/admin/hello
@@ -724,12 +698,14 @@ $ curl -H "Authorization: bearer $JIM_TOKEN" http://localhost:8080/user/hello
 Hello User
 ----
 
-----
-$ # Test without any user
+Test the application without any user:
 
+----
 $ curl http://localhost:8080/guest/hello
 Hello Guest
 ----
+
+Do a commit:
 
 ----
 $ git add -A
@@ -738,32 +714,88 @@ $ git commit -m 'Added Keycloak support'
 
 Stop the Spring Boot application.
 
+Modifiy your application with the following commands:
+
 ----
-$ git apply ../patches/keycloak-resource-server-demo/HelloEndpoint.java
-$ git apply ../patches/keycloak-resource-server-demo/application.properties
+$ git apply ../../patches/keycloak-resource-server-demo/src/main/java/com/example/demo/HelloEndpoint.java.diff
+$ git apply ../../patches/keycloak-resource-server-demo/src/main/resources/application.properties.diff
+----
+
+See what was changed:
+
+----
 $ git difftool
 ----
+
+Restart the application:
 
 ----
 $ ./gradlew bootRun
 ----
+
+Test application againg:
 
 ----
 $ export JOE_TOKEN=`curl -ss --data "grant_type=password&client_id=curl&username=joe_admin&password=admin" http://localhost:8180/auth/realms/spring-security-example/protocol/openid-connect/token | jq -r .access_token`
 $ curl -H "Authorization: bearer $JOE_TOKEN" http://localhost:8080/admin/hello
 ----
 
+Do another commit:
+
 ----
+$ cat > README.adoc <<'EOF'
+= keycloak-resource-server-demo
+
+This application was created using the steps described in https://github.com/paulojeronimo/keycloak-spring-boot-tutorial#lab-f2[keycloak-spring-boot-tutorial].
+EOF
+
 $ git add -A
 $ git commit -m 'Added support to show principal name'
 ----
+
+////
+----
+$ keycloak-lab
+
+$ keycloak-use 4
+
+$ git clone https://github.com/thomasdarimont/spring-boot-admin-keycloak-example
+
+$ $KEYCLOAK_HOME/bin/standalone.sh \
+  -Dkeycloak.migration.action=import -Dkeycloak.migration.provider=singleFile \
+  -Dkeycloak.migration.file=$PWD/spring-boot-admin-keycloak-example/bootadmin-realm.json
+
+$ mvn clean package
+
+$ java -jar
+----
+////
+
+=== Lab F3: Connecting to Keycloak using Spring Oauth2 OpenID Connector
+
+*Under construction ...*
+
+==== Resources
+
+* https://medium.com/@bcarunmail/securing-rest-api-using-keycloak-and-spring-oauth2-6ddf3a1efcc2[Securing REST API using Keycloak and Spring Oauth2]
+** https://github.com/bcarun/spring-oauth2-keycloak-connector
+* https://medium.com/@bcarunmail/accessing-secure-rest-api-using-spring-oauth2resttemplate-ef18377e2e05[Accessing Secure REST API using Spring OAuth2RestTemplate]
+** https://github.com/bcarun/spring-oauth2-employee-service
+** https://github.com/bcarun/spring-oauth2-department-service
+* https://github.com/thomasdarimont/spring-boot-2-keycloak-oauth-example[PoC for Spring Boot 2 + Spring Security 5 + Keycloak 3.4.3 without Keycloak Adapter]
+* https://developers.redhat.com/blog/2017/01/05/spring-boot-and-oauth2-with-keycloak/[Spring Boot and OAuth2 with Keycloak]
+** https://github.com/kameshsampath/springboot-keycloak-demo
+* https://info.michael-simons.eu/2017/12/28/use-keycloak-with-your-spring-boot-2-application/[Use Keycloak with your Spring Boot 2 application]
+** https://github.com/michael-simons/keycloakdemo
+* https://dzone.com/articles/build-authentication-the-easy-way-with-spring-secu[Build Authentication the Easy Way with Spring Security 5.0 and OIDC]
 
 === Resources
 
 * https://www.keycloak.org/docs/latest/securing_apps/index.html#_spring_boot_adapter[Spring Boot Adapter]
 * https://www.keycloak.org/docs/latest/securing_apps/index.html#_spring_security_adapter[Spring Security Adapter]
 
-== Lab: Running Keycloak in Kubernetes
+[[lab-g]]
+== Lab G: Running Keycloak in Kubernetes
 
 TODO
 
@@ -781,9 +813,10 @@ video::gJ81eaGlN_I[youtube]
 .https://www.youtube.com/watch?v=NZI3C6vdjQk[Video (Mar 30, 2018): Setup Keycloak as an Identity Provider & OpenID Connect Token Issuer]
 video::NZI3C6vdjQk[youtube]
 
-== Lab: Migrating Spring Boot microservices security from UAA to Keycloak
+[[lab-h]]
+== Lab H: Migrating Spring Boot microservices security from UAA to Keycloak
 
-=== A Spring Boot microservices app secured by UAA
+=== Lab H1: Spring Boot microservices app secured by UAA
 
 Setup the JDK to use version 8 (otherwise UAA will not compile on version {uaa-version}):
 
@@ -791,43 +824,53 @@ Setup the JDK to use version 8 (otherwise UAA will not compile on version {uaa-v
 $ sdk default java 8u161-oracle
 ----
 
-Start the UAA server:
+Install and start the UAA server through the functions currently loaded (by link:scripts/bashrc[]) in your shell:
 
-[subs=attributes]
+[subs="+attributes"]
 ----
-$ cd $KEYCLOAK_LAB
-$ git clone https://github.com/cloudfoundry/uaa
-$ cd uaa && git checkout {uaa-version}
-$ ./gradlew run
+$ uaa-install
+$ uaa-start
 ----
 
-Open another shell and clone the https://github.com/paulojeronimo/oauth-uaa-sample[oauth-uaa-sample^]:
+Open another shell and clone the https://github.com/paulojeronimo/oauth-uaa-sample[oauth-uaa-sample^] into the `samples` dir:
 
 ----
-$ cd $KEYCLOAK_LAB
+$ keycloak-lab
+$ mkdir -p samples && cd $_
 $ git clone https://github.com/paulojeronimo/oauth-uaa-sample
 $ cd oauth-uaa-sample
 ----
 
 Follow the steps in https://github.com/paulojeronimo/oauth-uaa-sample/blob/master/README.adoc[oauth-uaa-sample/README.adoc^] to run the application.
 
-=== Migrating security from UAA to Keycloak
+=== Lab H2: Spring Boot 2 microservices app secured by UAA
+
+See https://github.com/paulojeronimo/oauth2-boot2.
+
+=== Lab H3: Migrating security from UAA to Keycloak
+
+*Under construction ...*
+
+[[lab-i]]
+== Lab I: Configuring Keycloak to use a PostgreSQL database
 
 TODO
 
-== Lab: Configuring Keycloak to use a PostgreSQL database
+[[lab-j]]
+== Lab J: Integrating Keycloak with LDAP
+
+=== Resources
+
+.https://github.com/ivangfr/springboot-keycloak-openldap[GitHub: ivangfr/springboot-keycloak-openldap]
+&nbsp;
+
+[[lab-k]]
+== Lab K: Using Keycloak with SAML
 
 TODO
 
-== Lab: Integrating Keycloak with LDAP
-
-TODO
-
-== Lab: Using Keycloak with SAML
-
-TODO
-
-== Lab: Running Keycloak in Cloud Foundry
+[[lab-l]]
+== Lab L: Running Keycloak in Cloud Foundry
 
 TODO
 
@@ -845,6 +888,35 @@ TODO
 .https://github.com/thomasdarimont/spring-boot-keycloak-server-example[GitHub: thomasdarimont/spring-boot-keycloak-server-example]
 &nbsp;
 
+== Postman configuration samples
+
+* Keycloak sample:
+** Token Name: keycloak-bearer-token
+** Grant Type: Authorization Code
+** Callback URL: http://localhost:8085
+** Auth URL: http://localhost:8180/auth/realms/dev/protocol/openid-connect/auth
+** Access Token URL: http://localhost:8180/auth/realms/dev/protocol/openid-connect/token
+** Client ID: employee-service
+** Client Secret: 9252a605-1568-4d00-867b-b70ae3d3940c
+** Scope: openid
+** State: 12345
+** Client Authentication: Send as Basic Auth header
+
+* Keycloak other URLs:
+** token_introspection_endpoint: http://localhost:8080/auth/realms/dev/protocol/openid-connect/token/introspect
+** userinfo_endpoint: http://localhost:8080/auth/realms/dev/protocol/openid-connect/userinfo
+
+* UAA sample:
+** Token Name: uaa-bearer-token
+** Callback URL: http://localhost:8085
+** Auth URL: http://localhost:8080/uaa/
+** Access Token URL: http://localhost:8080/auth/outh/token
+** Client ID: client1
+** Client Secret: client1
+** Scope: openid
+** State: 12345
+** Client Authentication: Send as Basic Auth header
+
 == Other resources
 
 .https://developers.redhat.com/blog/2018/08/28/securing-apps-and-services-with-keycloak/[Article (August 28, 2018): Securing apps and services with Keycloak (Watch DevNation Live video)]
@@ -859,6 +931,37 @@ video::67mezK3NzpU[youtube]
 ////
 Other useful resources and links:
 
-https://mvnrepository.com/artifact/org.keycloak/keycloak-spring-boot-starter
-https://sandor-nemeth.github.io/java/spring/2017/06/15/spring-boot-with-keycloak.html
+* https://mvnrepository.com/artifact/org.keycloak/keycloak-spring-boot-starter
+* https://sandor-nemeth.github.io/java/spring/2017/06/15/spring-boot-with-keycloak.html
+* https://blog.scalac.io/user-authentication-with-keycloak-part1.html
+** https://github.com/kmikulski/blog-keycloak/tree/master/keycloak-react-part1
+
+* https://developers.redhat.com/blog/2018/10/09/3scale-3rd-party-idp-oidc/
+* https://developers.redhat.com/blog/2018/10/08/configuring-nginx-keycloak-oauth-oidc/
+* https://developers.redhat.com/blog/2018/08/28/securing-apps-and-services-with-keycloak/
+* https://developers.redhat.com/blog/2018/03/19/sso-made-easy-keycloak-rhsso/
+* https://developers.redhat.com/blog/2018/02/01/rh-sso-liferay-dxp-saml/
+* https://developers.redhat.com/blog/2017/12/06/keycloak-identity-brokering-openshift/
+* https://developers.redhat.com/blog/2017/10/18/openid-connect-identity-brokering-red-hat-single-sign/
+** https://github.com/tomjackman/keyonic-v2
+* https://developers.redhat.com/blog/2017/12/06/keycloak-identity-brokering-openshift/
+* https://developers.redhat.com/blog/2017/01/05/spring-boot-and-oauth2-with-keycloak/
+** https://github.com/kameshsampath/springboot-keycloak-demo
+* https://developers.redhat.com/blog/2016/10/04/how-red-hat-re-designed-its-single-sign-on-sso-architecture-and-why/
+
+* https://www.youtube.com/watch?v=baWoo5sT0Ho[RHSSO (Keycloak) and LDAP integration with 3scale]
+* https://community.alfresco.com/community/bpm/blog/2018/08/28/integrating-aps-and-keycloak-in-a-multi-domain-ldap-environment
+* http://lists.jboss.org/pipermail/keycloak-user/2016-June/006646.html[automated Sync Keycloak Roles To LDAP]
+
+* https://github.com/ivangfr/springboot-keycloak-openldap
+* https://github.com/ivangfr/springboot-testing-mongodb-keycloak
+* https://github.com/ivangfr/keycloak-clustered
+
+* https://blog.codecentric.de/en/2019/01/securing-spring-boot-admin-actuator-endpoints-keycloak/
+* https://gist.github.com/ThomasVitale/5544d276479d3895f4e8632720f5f92b
+
+* https://docs.spring.io/spring-security-oauth2-boot/docs/current/reference/html/boot-features-security-oauth2-resource-server.html
+
+* https://downey.io/notes/dev/create-cloud-foundry-read-only-admin/
+* https://starkandwayne.com/blog/using-the-check-token-endpoint/
 ////

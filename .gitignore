@@ -1,8 +1,6 @@
-/README.html
+/*.html
 /keycloak*
+/uaa*
+!/uaa-keycloak-comparison.adoc
 /*.access_token
-/bashrc
-/spring-boot-keycloak-tutorial
-/uaa
-/oauth-*-sample
-/oauth2-boot2
+/samples

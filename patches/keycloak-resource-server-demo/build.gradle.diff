@@ -1,0 +1,25 @@
+diff --git a/build.gradle b/build.gradle
+index 5108227..6449d78 100644
+--- a/build.gradle
++++ b/build.gradle
+@@ -13,9 +13,20 @@ repositories {
+ 	mavenCentral()
+ }
+ 
++ext {
++  set('keycloakVersion', '4.8.3.Final')
++}
++
+ dependencies {
+ 	implementation 'org.springframework.boot:spring-boot-starter-security'
+ 	implementation 'org.springframework.boot:spring-boot-starter-web'
++	implementation 'org.keycloak:keycloak-spring-boot-starter'
+ 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+ 	testImplementation 'org.springframework.security:spring-security-test'
+ }
++
++dependencyManagement {
++  imports {
++    mavenBom "org.keycloak.bom:keycloak-adapter-bom:${keycloakVersion}"
++  }
++}

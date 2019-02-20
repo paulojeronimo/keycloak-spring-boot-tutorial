@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+
+#####################
+# tag:configuration[]
+
+# Keycloak
+
+# https://stackoverflow.com/a/303628320 (about readonly keyword)
+readonly KEYCLOAK_3_VERSION=3.4.3.Final
+readonly KEYCLOAK_4_VERSION=4.8.3.Final
+
+# https://stackoverflow.com/a/35006505 (about BASH_SOURCE variable)
+export KEYCLOAK_LAB=`cd "$(dirname "$BASH_SOURCE")/.."; pwd`
+
+export KEYCLOAK_HOME=$KEYCLOAK_LAB/keycloak-bin # <- must be relative to $KEYCLOAK_LAB!
+export KEYCLOAK_PORT_OFFSET=100
+export PATH=$KEYCLOAK_HOME/bin:$PATH
+
+# UAA
+
+export UAA_HOME=$KEYCLOAK_LAB/uaa # <- must be relative to $KEYCLOAK_LAB!
+export UAA_REPO=https://github.com/cloudfoundry/uaa 
+export UAA_VERSION=4.28.0
+
+# end:configuration[]
+#####################
+
+##########################
+# tag:keycloak-functions[]
+
+keycloak-lab() {
+  cd $KEYCLOAK_LAB
+}
+
+keycloak-use() {
+  pushd $KEYCLOAK_LAB &> /dev/null
+  case $1 in
+    3|4)
+      rm -f keycloak-bin
+      [ "$1" = "3" ] && \
+        ln -s keycloak-$KEYCLOAK_3_VERSION keycloak-bin || \
+        ln -s keycloak-$KEYCLOAK_4_VERSION keycloak-bin
+      export KEYCLOAK_VERSION=`keycloak-version`
+      ;;
+    *) echo "Use 3 or 4!";;
+  esac
+  popd &> /dev/null
+}
+
+keycloak-start() {
+  $KEYCLOAK_HOME/bin/standalone.sh -Djboss.socket.binding.port-offset=$KEYCLOAK_PORT_OFFSET
+}
+
+keycloak-version() {
+  readlink $KEYCLOAK_LAB/keycloak-bin | cut -d- -f2
+}
+
+keycloak-install() {
+  local dir=keycloak-$KEYCLOAK_VERSION
+  local installer=keycloak-$KEYCLOAK_VERSION.tar.gz
+
+  pushd $KEYCLOAK_LAB &> /dev/null
+  rm -rf $dir
+  [ -f $installer ] && {
+    tar xvfz $installer &> /dev/null && \
+      echo "Keycloak $installer installed!" || \
+      echo "Fail to install $installer"
+  } || echo "$installer not found!"
+  popd &> /dev/null
+}
+
+# end:keycloak-functions[]
+##########################
+
+#####################
+# tag:uaa-functions[]
+
+uaa-install() {
+  local installer=uaa.tar.gz
+  local ret=0
+
+  pushd $KEYCLOAK_LAB &> /dev/null
+
+  echo "Removing old UAA installation ..."
+  rm -rf uaa
+
+  if [ ! -f $installer ]
+  then
+    echo "Cloning $UAA_REPO ..."
+    git clone $UAA_REPO &> /dev/null && {
+      echo "Creating $installer ..."
+      tar cvf $installer uaa/ &> /dev/null || ret=$?
+    } || ret=$?
+  fi
+
+  if [ $ret = 0 ]
+  then
+    [ -d uaa ] || {
+      echo "Extracting $installer ..."
+      tar xvf $installer &> /dev/null || ret=$?
+    }
+    echo "Configuring to use version $UAA_VERSION ..."
+    cd uaa
+    git checkout $UAA_VERSION &> /dev/null
+  fi
+
+  popd &> /dev/null
+  return $ret
+}
+
+uaa-start() {
+  if [ -d $UAA_HOME ]
+  then
+    pushd $UAA_HOME &> /dev/null
+    ./gradlew run
+    popd &> /dev/null
+  else
+    echo "UAA is not installed in $UAA_HOME!"
+    return 1
+  fi
+}
+
+# end:uaa-functions[]
+#####################
+
+[ -L $KEYCLOAK_LAB/keycloak-bin ] || keycloak-use 3
+export KEYCLOAK_VERSION=`keycloak-version`
